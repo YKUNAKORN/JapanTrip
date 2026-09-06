@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Japan Trip Tracker & Split</title>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --bg: #f2f2f7;
+      --card: #ffffff;
+      --text: #1c1c1e;
+      --subtext: #8e8e93;
+      --primary: #007aff;
+      --success: #34c759;
+      --warning: #ff9500;
+      --danger: #ff3b30;
+      --border: #e5e5ea;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 16px;
+      box-sizing: border-box;
+      padding-bottom: 60px;
+    }
+    h2, h3 { margin-top: 0; }
+    .card {
+      background: var(--card);
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+    label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--subtext);
+      display: block;
+      margin-bottom: 4px;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      font-size: 15px;
+      box-sizing: border-box;
+      margin-bottom: 12px;
+      background: #fff;
+    }
+    .row-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    button {
+      width: 100%;
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-export { background: var(--success); margin-top: 12px; }
+    .btn-cancel { background: #8e8e93; margin-top: 8px; }
+    .split-toggle-box {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      background: #f8f9fa;
+      padding: 10px;
+      border-radius: 8px;
+    }
+    .split-details {
+      display: none;
+      background: #fdfaf3;
+      border: 1px dashed var(--warning);
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+    .summary-card {
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 13px;
+    }
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+    th, td {
+      text-align: left;
+      padding: 10px 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    th {
+      background: #f8f9fa;
+      color: var(--subtext);
+      font-weight: 600;
+    }
+    td { vertical-align: middle; }
+    .tag {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 11px;
+      background: #e5e5ea;
+    }
+    .tag-split { background: #ffeaa7; color: #d63031; }
+    .action-btn {
+      padding: 5px 9px;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-right: 4px;
+    }
+    .btn-edit-action { background: #e5f2ff; color: var(--primary); }
+    .btn-del-action { background: #ffe5e5; color: var(--danger); }
+  </style>
+</head>
+<body>
+
+  <h2>บันทึกทริปญี่ปุ่น 🇯🇵</h2>
+
+  <div class="card">
+    <label>ยอดรวมเฉพาะส่วนของเรา (ตัดส่วนเพื่อนออกแล้ว)</label>
+    <div id="mySummary" class="summary-grid"></div>
+  </div>
+
+  <div class="card" id="formCard">
+    <h3 id="formTitle" style="font-size: 16px; margin-bottom: 12px;">เพิ่มรายการใหม่</h3>
+    <div class="row-2">
+      <div>
+        <label>ยอดจ่ายทั้งหมด</label>
+        <input type="number" id="amount" placeholder="0" inputmode="decimal">
+      </div>
+      <div>
+        <label>สกุลเงิน</label>
+        <select id="currency">
+          <option value="JPY">JPY (¥ เยน)</option>
+          <option value="THB">THB (฿ บาท)</option>
+          <option value="USD">USD ($ ดอลลาร์)</option>
+          <option value="VND">VND (₫ ดอง)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="row-2">
+      <div>
+        <label>ช่องทางชำระเงิน</label>
+        <select id="paymentMethod">
+          <option value="เงินสด">เงินสด</option>
+          <option value="บัตร YouTrip">บัตร YouTrip</option>
+          <option value="บัตร The 1">บัตร The 1</option>
+        </select>
+      </div>
+      <div>
+        <label>หมวดหมู่</label>
+        <select id="category"></select>
+      </div>
+    </div>
+
+    <button type="button" onclick="addNewCategory()" style="background: #5856d6; padding: 6px; font-size: 12px; margin-bottom: 12px;">+ เพิ่มหมวดหมู่ใหม่</button>
+
+    <label>รายละเอียด / โน้ต</label>
+    <textarea id="note" rows="2" placeholder="เช่น ค่าข้าวหน้าเนื้อ, ช้อป Uniqlo"></textarea>
+
+    <div class="split-toggle-box">
+      <input type="checkbox" id="isSplit" onchange="toggleSplitBox()" style="width: 20px; height: 20px; margin: 0;">
+      <label for="isSplit" style="margin: 0; font-size: 14px; color: var(--text);">รายการนี้หารกับเพื่อน</label>
+    </div>
+
+    <div id="splitSection" class="split-details">
+      <label>ชื่อเพื่อนที่ร่วมหาร (คั่นด้วยจุลภาค เช่น เอก, นนท์, บอย)</label>
+      <input type="text" id="splitFriends" placeholder="เอก, นนท์">
+      <div id="splitPreview" style="font-size: 13px; color: #795548; margin-top: 4px;"></div>
+    </div>
+
+    <button id="btnSubmit" onclick="saveExpense()">บันทึกรายการ</button>
+    <button id="btnCancelEdit" class="btn-cancel" style="display: none;" onclick="cancelEdit()">ยกเลิกการแก้ไข</button>
+  </div>
+
+  <div class="card">
+    <label>ยอดที่ต้องเก็บจากเพื่อน</label>
+    <div id="friendsSummary"></div>
+  </div>
+
+  <div class="card">
+    <label>ตารางรายการใช้จ่ายทั้งหมด</label>
+    <div class="table-container">
+      <table id="expenseTable">
+        <thead>
+          <tr>
+            <th>จัดการ</th>
+            <th>วันเวลา</th>
+            <th>รายการ/โน้ต</th>
+            <th>หมวด</th>
+            <th>จ่ายด้วย</th>
+            <th>ยอดจ่ายจริง</th>
+            <th>ประเภท</th>
+            <th>ยอดเรา</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+    <button class="btn-export" onclick="exportToExcel()">📥 Export เป็นไฟล์ Excel (.xlsx)</button>
+  </div>
+
+  <script>
+    const DEFAULT_CATEGORIES = ["อาหาร", "ช้อปปิ้ง/เสื้อผ้า", "ค่าเดินทาง", "ที่พัก", "ตั๋ว/กิจกรรม", "ของฝาก", "อื่นๆ"];
+    const symbols = { JPY: "¥", THB: "฿", USD: "$", VND: "₫" };
+
+    let categories = JSON.parse(localStorage.getItem('jp_categories')) || DEFAULT_CATEGORIES;
+    let expenses = JSON.parse(localStorage.getItem('jp_expenses')) || [];
+    let editingId = null;
+
+    function init() {
+      renderCategories();
+      renderUI();
+
+      document.getElementById('amount').addEventListener('input', updateSplitPreview);
+      document.getElementById('splitFriends').addEventListener('input', updateSplitPreview);
+    }
+
+    function renderCategories() {
+      const select = document.getElementById('category');
+      select.innerHTML = '';
+      categories.forEach(cat => {
+        const opt = document.createElement('option');
+        opt.value = cat;
+        opt.textContent = cat;
+        select.appendChild(opt);
+      });
+    }
+
+    function addNewCategory() {
+      const newCat = prompt("พิมพ์ชื่อหมวดหมู่ใหม่:");
+      if (newCat && newCat.trim()) {
+        const trimmed = newCat.trim();
+        if (!categories.includes(trimmed)) {
+          categories.push(trimmed);
+          localStorage.setItem('jp_categories', JSON.stringify(categories));
+          renderCategories();
+          document.getElementById('category').value = trimmed;
+        }
+      }
+    }
+
+    function toggleSplitBox() {
+      const isSplit = document.getElementById('isSplit').checked;
+      document.getElementById('splitSection').style.display = isSplit ? 'block' : 'none';
+      updateSplitPreview();
+    }
+
+    function updateSplitPreview() {
+      const isSplit = document.getElementById('isSplit').checked;
+      if (!isSplit) return;
+
+      const total = parseFloat(document.getElementById('amount').value) || 0;
+      const friendsText = document.getElementById('splitFriends').value.trim();
+      const friends = friendsText ? friendsText.split(',').map(f => f.trim()).filter(f => f) : [];
+      const totalPeople = friends.length + 1;
+      const perPerson = totalPeople > 0 ? (total / totalPeople).toFixed(2) : 0;
+      const cur = document.getElementById('currency').value;
+
+      document.getElementById('splitPreview').innerHTML = 
+        `รวมตัวเราเป็น ${totalPeople} คน → ตกคนละ <b>${symbols[cur]}${Number(perPerson).toLocaleString()}</b>`;
+    }
+
+    function saveExpense() {
+      const amount = parseFloat(document.getElementById('amount').value);
+      const currency = document.getElementById('currency').value;
+      const paymentMethod = document.getElementById('paymentMethod').value;
+      const category = document.getElementById('category').value;
+      const note = document.getElementById('note').value.trim() || "-";
+      const isSplit = document.getElementById('isSplit').checked;
+
+      if (isNaN(amount) || amount <= 0) {
+        alert("กรุณากรอกจำนวนเงินให้ถูกต้อง");
+        return;
+      }
+
+      let friends = [];
+      let myShare = amount;
+      let perPersonShare = amount;
+
+      if (isSplit) {
+        const friendsInput = document.getElementById('splitFriends').value.trim();
+        friends = friendsInput ? friendsInput.split(',').map(f => f.trim()).filter(f => f) : [];
+        if (friends.length === 0) {
+          alert("กรุณาระบุชื่อเพื่อนอย่างน้อย 1 คน");
+          return;
+        }
+        const totalPeople = friends.length + 1;
+        perPersonShare = Number((amount / totalPeople).toFixed(2));
+        myShare = perPersonShare;
+      }
+
+      if (editingId !== null) {
+        const index = expenses.findIndex(i => i.id === editingId);
+        if (index !== -1) {
+          expenses[index] = {
+            ...expenses[index],
+            totalAmount: amount,
+            myShare: myShare,
+            currency: currency,
+            paymentMethod: paymentMethod,
+            category: category,
+            note: note,
+            isSplit: isSplit,
+            friends: friends,
+            perPersonShare: perPersonShare
+          };
+        }
+        cancelEdit();
+      } else {
+        const item = {
+          id: Date.now(),
+          date: new Date().toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' }),
+          totalAmount: amount,
+          myShare: myShare,
+          currency: currency,
+          paymentMethod: paymentMethod,
+          category: category,
+          note: note,
+          isSplit: isSplit,
+          friends: friends,
+          perPersonShare: perPersonShare
+        };
+        expenses.unshift(item);
+        resetForm();
+      }
+
+      localStorage.setItem('jp_expenses', JSON.stringify(expenses));
+      renderUI();
+    }
+
+    function startEdit(id) {
+      const item = expenses.find(i => i.id === id);
+      if (!item) return;
+
+      editingId = id;
+      document.getElementById('amount').value = item.totalAmount;
+      document.getElementById('currency').value = item.currency;
+      document.getElementById('paymentMethod').value = item.paymentMethod;
+      document.getElementById('category').value = item.category;
+      document.getElementById('note').value = item.note === "-" ? "" : item.note;
+      document.getElementById('isSplit').checked = item.isSplit;
+      document.getElementById('splitFriends').value = item.isSplit ? item.friends.join(', ') : "";
+
+      toggleSplitBox();
+
+      document.getElementById('formTitle').innerText = "✏️ แก้ไขรายการ";
+      document.getElementById('btnSubmit').innerText = "อัปเดตการแก้ไข";
+      document.getElementById('btnCancelEdit').style.display = 'block';
+
+      document.getElementById('formCard').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function cancelEdit() {
+      editingId = null;
+      resetForm();
+      document.getElementById('formTitle').innerText = "เพิ่มรายการใหม่";
+      document.getElementById('btnSubmit').innerText = "บันทึกรายการ";
+      document.getElementById('btnCancelEdit').style.display = 'none';
+    }
+
+    function resetForm() {
+      document.getElementById('amount').value = '';
+      document.getElementById('note').value = '';
+      document.getElementById('splitFriends').value = '';
+      document.getElementById('isSplit').checked = false;
+      toggleSplitBox();
+    }
+
+    function deleteExpense(id) {
+      if (confirm("ต้องการลบรายการนี้ใช่ไหม?")) {
+        if (editingId === id) cancelEdit();
+        expenses = expenses.filter(i => i.id !== id);
+        localStorage.setItem('jp_expenses', JSON.stringify(expenses));
+        renderUI();
+      }
+    }
+
+    function renderUI() {
+      renderMySummary();
+      renderFriendsSummary();
+      renderTable();
+    }
+
+    function renderMySummary() {
+      const myTotals = { JPY: 0, THB: 0, USD: 0, VND: 0 };
+      expenses.forEach(i => {
+        myTotals[i.currency] = (myTotals[i.currency] || 0) + i.myShare;
+      });
+
+      document.getElementById('mySummary').innerHTML = Object.keys(myTotals).map(cur => `
+        <div class="summary-card">
+          <b>${cur}</b>: ${symbols[cur]}${myTotals[cur].toLocaleString()}
+        </div>
+      `).join('');
+    }
+
+    function renderFriendsSummary() {
+      const friendDebts = {};
+      expenses.forEach(item => {
+        if (item.isSplit && item.friends) {
+          item.friends.forEach(f => {
+            if (!friendDebts[f]) friendDebts[f] = {};
+            friendDebts[f][item.currency] = (friendDebts[f][item.currency] || 0) + item.perPersonShare;
+          });
+        }
+      });
+
+      const container = document.getElementById('friendsSummary');
+      const friendNames = Object.keys(friendDebts);
+
+      if (friendNames.length === 0) {
+        container.innerHTML = '<div style="color: var(--subtext); text-align: center; font-size: 13px; padding: 8px 0;">ไม่มีรายการค้างเรียกเก็บจากเพื่อน</div>';
+        return;
+      }
+
+      let html = `<table><thead><tr><th>เพื่อน</th><th>ยอดที่ต้องโอนให้เรา</th></tr></thead><tbody>`;
+      friendNames.forEach(name => {
+        const amounts = Object.entries(friendDebts[name])
+          .map(([cur, amt]) => `${symbols[cur]}${amt.toLocaleString()} (${cur})`)
+          .join(', ');
+        html += `<tr><td><b>${name}</b></td><td style="color: var(--warning); font-weight: 600;">${amounts}</td></tr>`;
+      });
+      html += `</tbody></table>`;
+      container.innerHTML = html;
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById('tableBody');
+      tbody.innerHTML = '';
+
+      if (expenses.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--subtext); padding: 16px;">ยังไม่มีรายการบันทึก</td></tr>';
+        return;
+      }
+
+      expenses.forEach(item => {
+        const tr = document.createElement('tr');
+        const splitTag = item.isSplit 
+          ? `<span class="tag tag-split">หาร: ${item.friends.join(', ')}</span>`
+          : `<span class="tag">ส่วนตัว</span>`;
+
+        tr.innerHTML = `
+          <td>
+            <button class="action-btn btn-edit-action" onclick="startEdit(${item.id})">แก้ไข</button>
+            <button class="action-btn btn-del-action" onclick="deleteExpense(${item.id})">ลบ</button>
+          </td>
+          <td>${item.date}</td>
+          <td><b>${item.note}</b></td>
+          <td><span class="tag">${item.category}</span></td>
+          <td><span class="tag">${item.paymentMethod}</span></td>
+          <td><b>${symbols[item.currency]}${item.totalAmount.toLocaleString()}</b></td>
+          <td>${splitTag}</td>
+          <td style="color: var(--primary); font-weight: 700;">${symbols[item.currency]}${item.myShare.toLocaleString()}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function exportToExcel() {
+      if (expenses.length === 0) {
+        alert("ยังไม่มีข้อมูลสำหรับ Export");
+        return;
+      }
+
+      const wb = XLSX.utils.book_new();
+
+      const allExpensesData = expenses.map(i => ({
+        "วันเวลา": i.date,
+        "รายการ/โน้ต": i.note,
+        "หมวดหมู่": i.category,
+        "ช่องทางชำระเงิน": i.paymentMethod,
+        "สกุลเงิน": i.currency,
+        "ยอดจ่ายจริงทั้งหมด": i.totalAmount,
+        "หารเพื่อนหรือไม่": i.isSplit ? "หาร" : "ไม่หาร",
+        "รายชื่อเพื่อนที่หาร": i.isSplit ? i.friends.join(', ') : "-",
+        "ยอดต่อคน": i.isSplit ? i.perPersonShare : i.totalAmount,
+        "ยอดส่วนตัวของเรา": i.myShare
+      }));
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(allExpensesData), "รายการใช้จ่ายทั้งหมด");
+
+      const friendDebts = [];
+      expenses.forEach(item => {
+        if (item.isSplit && item.friends) {
+          item.friends.forEach(f => {
+            friendDebts.push({
+              "ชื่อเพื่อน": f,
+              "รายการ": item.note,
+              "วันที่": item.date,
+              "สกุลเงิน": item.currency,
+              "ยอดที่ต้องจ่าย": item.perPersonShare,
+              "ช่องทางที่จ่ายไป": item.paymentMethod
+            });
+          });
+        }
+      });
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(friendDebts.length > 0 ? friendDebts : [{ "ข้อความ": "ไม่มีรายการหารเพื่อน" }]), "ยอดเก็บจากเพื่อน");
+
+      const myTotals = { JPY: 0, THB: 0, USD: 0, VND: 0 };
+      expenses.forEach(i => myTotals[i.currency] = (myTotals[i.currency] || 0) + i.myShare);
+      const summaryData = Object.entries(myTotals).map(([cur, sum]) => ({
+        "สกุลเงิน": cur,
+        "ยอดรวมเฉพาะส่วนตัวเรา": sum
+      }));
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(summaryData), "สรุปยอดส่วนตัว");
+
+      XLSX.writeFile(wb, `Japan_Trip_Expenses_${new Date().toISOString().slice(0,10)}.xlsx`);
+    }
+
+    init();
+  </script>
+</body>
+</html>
