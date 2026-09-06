@@ -24,7 +24,7 @@
       margin: 0;
       padding: 16px;
       box-sizing: border-box;
-      padding-bottom: 60px;
+      padding-bottom: 70px;
     }
     h2, h3 { margin-top: 0; }
     .card {
@@ -43,9 +43,9 @@
     }
     input, select, textarea {
       width: 100%;
-      padding: 10px;
+      padding: 12px;
       border: 1px solid var(--border);
-      border-radius: 9px;
+      border-radius: 10px;
       font-size: 15px;
       box-sizing: border-box;
       margin-bottom: 12px;
@@ -56,19 +56,65 @@
       grid-template-columns: 1fr 1fr;
       gap: 10px;
     }
-    button {
+    .category-group {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .category-group select {
+      margin-bottom: 0;
+      flex: 1;
+    }
+    .btn-add-cat {
+      width: auto;
+      white-space: nowrap;
+      background: #5856d6;
+      color: white;
+      border: none;
+      padding: 0 14px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-main {
       width: 100%;
       background: var(--primary);
       color: white;
       border: none;
-      padding: 12px;
-      border-radius: 10px;
+      padding: 14px;
+      border-radius: 12px;
       font-size: 16px;
       font-weight: 600;
       cursor: pointer;
+      box-sizing: border-box;
     }
-    .btn-export { background: var(--success); margin-top: 12px; }
-    .btn-cancel { background: #8e8e93; margin-top: 8px; }
+    .btn-export {
+      width: 100%;
+      background: var(--success);
+      color: white;
+      border: none;
+      padding: 14px;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 14px;
+      box-sizing: border-box;
+    }
+    .btn-cancel {
+      width: 100%;
+      background: #8e8e93;
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 8px;
+      box-sizing: border-box;
+    }
     .split-toggle-box {
       display: flex;
       align-items: center;
@@ -76,7 +122,7 @@
       margin-bottom: 12px;
       background: #f8f9fa;
       padding: 10px;
-      border-radius: 8px;
+      border-radius: 10px;
     }
     .split-details {
       display: none;
@@ -121,23 +167,37 @@
     td { vertical-align: middle; }
     .tag {
       display: inline-block;
-      padding: 2px 6px;
+      padding: 3px 6px;
       border-radius: 4px;
       font-size: 11px;
       background: #e5e5ea;
     }
     .tag-split { background: #ffeaa7; color: #d63031; }
+    .btn-group-action {
+      display: inline-flex;
+      gap: 6px;
+    }
     .action-btn {
-      padding: 5px 9px;
+      padding: 6px 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-edit-action { background: #e5f2ff; color: var(--primary); }
+    .btn-del-action { background: #ffe5e5; color: var(--danger); }
+    .btn-settle-item {
+      background: #e4f9e9;
+      color: var(--success);
+      padding: 6px 10px;
       border: none;
       border-radius: 6px;
       font-size: 12px;
       font-weight: 600;
       cursor: pointer;
-      margin-right: 4px;
+      white-space: nowrap;
     }
-    .btn-edit-action { background: #e5f2ff; color: var(--primary); }
-    .btn-del-action { background: #ffe5e5; color: var(--danger); }
   </style>
 </head>
 <body>
@@ -178,11 +238,12 @@
       </div>
       <div>
         <label>หมวดหมู่</label>
-        <select id="category"></select>
+        <div class="category-group">
+          <select id="category"></select>
+          <button type="button" class="btn-add-cat" onclick="addNewCategory()">+ เพิ่ม</button>
+        </div>
       </div>
     </div>
-
-    <button type="button" onclick="addNewCategory()" style="background: #5856d6; padding: 6px; font-size: 12px; margin-bottom: 12px;">+ เพิ่มหมวดหมู่ใหม่</button>
 
     <label>รายละเอียด / โน้ต</label>
     <textarea id="note" rows="2" placeholder="เช่น ค่าข้าวหน้าเนื้อ, ช้อป Uniqlo"></textarea>
@@ -198,13 +259,15 @@
       <div id="splitPreview" style="font-size: 13px; color: #795548; margin-top: 4px;"></div>
     </div>
 
-    <button id="btnSubmit" onclick="saveExpense()">บันทึกรายการ</button>
+    <button id="btnSubmit" class="btn-main" onclick="saveExpense()">บันทึกรายการ</button>
     <button id="btnCancelEdit" class="btn-cancel" style="display: none;" onclick="cancelEdit()">ยกเลิกการแก้ไข</button>
   </div>
 
   <div class="card">
-    <label>ยอดที่ต้องเก็บจากเพื่อน</label>
-    <div id="friendsSummary"></div>
+    <label>รายการที่ต้องเก็บจากเพื่อน (แยกแต่ละรายการ)</label>
+    <div class="table-container">
+      <div id="friendsSummary"></div>
+    </div>
   </div>
 
   <div class="card">
@@ -235,12 +298,12 @@
 
     let categories = JSON.parse(localStorage.getItem('jp_categories')) || DEFAULT_CATEGORIES;
     let expenses = JSON.parse(localStorage.getItem('jp_expenses')) || [];
+    let settledDebts = JSON.parse(localStorage.getItem('jp_settled_debts')) || [];
     let editingId = null;
 
     function init() {
       renderCategories();
       renderUI();
-
       document.getElementById('amount').addEventListener('input', updateSplitPreview);
       document.getElementById('splitFriends').addEventListener('input', updateSplitPreview);
     }
@@ -400,8 +463,20 @@
       if (confirm("ต้องการลบรายการนี้ใช่ไหม?")) {
         if (editingId === id) cancelEdit();
         expenses = expenses.filter(i => i.id !== id);
+        settledDebts = settledDebts.filter(d => !d.startsWith(`${id}_`));
         localStorage.setItem('jp_expenses', JSON.stringify(expenses));
+        localStorage.setItem('jp_settled_debts', JSON.stringify(settledDebts));
         renderUI();
+      }
+    }
+
+    function settleSingleDebt(debtKey, friendName, itemNote) {
+      if (confirm(`ได้รับเงินค่า "${itemNote}" จาก "${friendName}" แล้วใช่ไหม?`)) {
+        if (!settledDebts.includes(debtKey)) {
+          settledDebts.push(debtKey);
+          localStorage.setItem('jp_settled_debts', JSON.stringify(settledDebts));
+          renderFriendsSummary();
+        }
       }
     }
 
@@ -425,31 +500,60 @@
     }
 
     function renderFriendsSummary() {
-      const friendDebts = {};
+      const pendingItems = [];
+
       expenses.forEach(item => {
-        if (item.isSplit && item.friends) {
+        if (item.isSplit && item.friends && item.friends.length > 0) {
           item.friends.forEach(f => {
-            if (!friendDebts[f]) friendDebts[f] = {};
-            friendDebts[f][item.currency] = (friendDebts[f][item.currency] || 0) + item.perPersonShare;
+            const debtKey = `${item.id}_${f}`;
+            if (!settledDebts.includes(debtKey)) {
+              pendingItems.push({
+                debtKey: debtKey,
+                friend: f,
+                note: item.note,
+                date: item.date,
+                currency: item.currency,
+                amount: item.perPersonShare,
+                paymentMethod: item.paymentMethod
+              });
+            }
           });
         }
       });
 
       const container = document.getElementById('friendsSummary');
-      const friendNames = Object.keys(friendDebts);
 
-      if (friendNames.length === 0) {
-        container.innerHTML = '<div style="color: var(--subtext); text-align: center; font-size: 13px; padding: 8px 0;">ไม่มีรายการค้างเรียกเก็บจากเพื่อน</div>';
+      if (pendingItems.length === 0) {
+        container.innerHTML = '<div style="color: var(--subtext); text-align: center; font-size: 13px; padding: 8px 0;">ไม่มีรายการค้างเรียกเก็บจากเพื่อน 🎉</div>';
         return;
       }
 
-      let html = `<table><thead><tr><th>เพื่อน</th><th>ยอดที่ต้องโอนให้เรา</th></tr></thead><tbody>`;
-      friendNames.forEach(name => {
-        const amounts = Object.entries(friendDebts[name])
-          .map(([cur, amt]) => `${symbols[cur]}${amt.toLocaleString()} (${cur})`)
-          .join(', ');
-        html += `<tr><td><b>${name}</b></td><td style="color: var(--warning); font-weight: 600;">${amounts}</td></tr>`;
+      let html = `<table>
+        <thead>
+          <tr>
+            <th>เพื่อน</th>
+            <th>รายการ</th>
+            <th>วันเวลา</th>
+            <th>ยอดที่ต้องคืน</th>
+            <th style="text-align:center;">จัดการ</th>
+          </tr>
+        </thead>
+        <tbody>`;
+
+      pendingItems.forEach(item => {
+        const safeNote = item.note.replace(/'/g, "\\'");
+        html += `
+          <tr>
+            <td><b>${item.friend}</b></td>
+            <td>${item.note}</td>
+            <td style="font-size: 12px; color: var(--subtext);">${item.date}</td>
+            <td style="color: var(--warning); font-weight: 600;">${symbols[item.currency]}${item.amount.toLocaleString()}</td>
+            <td style="text-align:center;">
+              <button class="btn-settle-item" onclick="settleSingleDebt('${item.debtKey}', '${item.friend}', '${safeNote}')">✓ ได้รับแล้ว</button>
+            </td>
+          </tr>`;
       });
+
       html += `</tbody></table>`;
       container.innerHTML = html;
     }
@@ -471,8 +575,10 @@
 
         tr.innerHTML = `
           <td>
-            <button class="action-btn btn-edit-action" onclick="startEdit(${item.id})">แก้ไข</button>
-            <button class="action-btn btn-del-action" onclick="deleteExpense(${item.id})">ลบ</button>
+            <div class="btn-group-action">
+              <button class="action-btn btn-edit-action" onclick="startEdit(${item.id})">แก้ไข</button>
+              <button class="action-btn btn-del-action" onclick="deleteExpense(${item.id})">ลบ</button>
+            </div>
           </td>
           <td>${item.date}</td>
           <td><b>${item.note}</b></td>
@@ -512,13 +618,15 @@
       expenses.forEach(item => {
         if (item.isSplit && item.friends) {
           item.friends.forEach(f => {
+            const isSettled = settledDebts.includes(`${item.id}_${f}`);
             friendDebts.push({
               "ชื่อเพื่อน": f,
               "รายการ": item.note,
               "วันที่": item.date,
               "สกุลเงิน": item.currency,
               "ยอดที่ต้องจ่าย": item.perPersonShare,
-              "ช่องทางที่จ่ายไป": item.paymentMethod
+              "ช่องทางที่จ่ายไป": item.paymentMethod,
+              "สถานะการจ่าย": isSettled ? "ได้รับเงินแล้ว" : "ยังไม่จ่าย"
             });
           });
         }
