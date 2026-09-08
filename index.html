@@ -2,60 +2,104 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Japan Trip Tracker & Split</title>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
     :root {
       --bg: #f2f2f7;
       --card: #ffffff;
-      --text: #1c1c1e;
-      --subtext: #8e8e93;
+      --card-subtle: #f8f9fa;
+      --text: #000000;
+      --text-sub: #8e8e93;
       --primary: #007aff;
       --success: #34c759;
       --warning: #ff9500;
       --danger: #ff3b30;
       --border: #e5e5ea;
+      --tag-bg: #e5e5ea;
     }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
     body {
       font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
       background: var(--bg);
       color: var(--text);
       margin: 0;
-      padding: 16px;
-      box-sizing: border-box;
-      padding-bottom: 70px;
+      padding: 0 16px;
+      padding-top: max(env(safe-area-inset-top), 16px);
+      padding-bottom: max(env(safe-area-inset-bottom), 40px);
+      letter-spacing: -0.2px;
     }
-    h2, h3 { margin-top: 0; }
+
+    .app-header {
+      padding: 12px 0 16px 0;
+    }
+    .app-header h1 {
+      font-size: 24px;
+      font-weight: 800;
+      margin: 0 0 4px 0;
+    }
+    .app-header p {
+      font-size: 13px;
+      color: var(--text-sub);
+      margin: 0;
+    }
+
     .card {
       background: var(--card);
-      border-radius: 14px;
+      border-radius: 18px;
       padding: 16px;
       margin-bottom: 16px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03), 0 1px 2px rgba(0, 0, 0, 0.04);
     }
+
+    .section-title {
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: var(--text-sub);
+      margin: 0 0 10px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
     label {
       font-size: 13px;
       font-weight: 600;
-      color: var(--subtext);
+      color: var(--text-sub);
       display: block;
-      margin-bottom: 4px;
+      margin-bottom: 6px;
     }
+
     input, select, textarea {
       width: 100%;
-      padding: 12px;
+      padding: 12px 14px;
       border: 1px solid var(--border);
-      border-radius: 10px;
-      font-size: 15px;
-      box-sizing: border-box;
-      margin-bottom: 12px;
+      border-radius: 12px;
+      font-size: 16px; /* 16px ป้องกันเบราว์เซอร์ iPhone Auto Zoom */
       background: #fff;
+      color: var(--text);
+      outline: none;
+      margin-bottom: 12px;
+      -webkit-appearance: none;
+      appearance: none;
     }
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--primary);
+    }
+
     .row-2 {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 10px;
+      gap: 12px;
     }
+
     .category-group {
       display: flex;
       gap: 8px;
@@ -66,87 +110,138 @@
       flex: 1;
     }
     .btn-add-cat {
-      width: auto;
-      white-space: nowrap;
       background: #5856d6;
-      color: white;
+      color: #fff;
       border: none;
       padding: 0 14px;
-      border-radius: 10px;
+      border-radius: 12px;
       font-size: 14px;
       font-weight: 600;
       cursor: pointer;
     }
-    .btn-main {
-      width: 100%;
-      background: var(--primary);
-      color: white;
-      border: none;
-      padding: 14px;
-      border-radius: 12px;
-      font-size: 16px;
-      font-weight: 600;
-      cursor: pointer;
-      box-sizing: border-box;
-    }
-    .btn-export {
-      width: 100%;
-      background: var(--success);
-      color: white;
-      border: none;
-      padding: 14px;
-      border-radius: 12px;
-      font-size: 16px;
-      font-weight: 600;
-      cursor: pointer;
-      margin-top: 14px;
-      box-sizing: border-box;
-    }
-    .btn-cancel {
-      width: 100%;
-      background: #8e8e93;
-      color: white;
-      border: none;
-      padding: 12px;
-      border-radius: 12px;
-      font-size: 15px;
-      font-weight: 600;
-      cursor: pointer;
-      margin-top: 8px;
-      box-sizing: border-box;
-    }
+
     .split-toggle-box {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
+      background: var(--card-subtle);
+      padding: 12px;
+      border-radius: 12px;
       margin-bottom: 12px;
-      background: #f8f9fa;
-      padding: 10px;
-      border-radius: 10px;
     }
     .split-details {
       display: none;
-      background: #fdfaf3;
+      background: #fffdf5;
       border: 1px dashed var(--warning);
-      border-radius: 10px;
+      border-radius: 12px;
       padding: 12px;
       margin-bottom: 12px;
     }
+
+    .btn {
+      width: 100%;
+      border: none;
+      padding: 14px;
+      border-radius: 14px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      box-sizing: border-box;
+      transition: opacity 0.15s ease;
+    }
+    .btn:active {
+      opacity: 0.7;
+    }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-export { background: var(--success); color: #fff; margin-top: 12px; }
+    .btn-cancel { background: #8e8e93; color: #fff; margin-top: 8px; }
+
+    /* ปุ่มกดเปิด/ปิด สรุปรายวัน */
+    .btn-toggle-daily {
+      background: #e5f2ff;
+      color: var(--primary);
+      padding: 12px 14px;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      border: none;
+      width: 100%;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
     .summary-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
       gap: 8px;
     }
     .summary-card {
-      background: #f8f9fa;
-      border-radius: 8px;
-      padding: 8px 12px;
-      font-size: 13px;
+      background: var(--card-subtle);
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-size: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
+    .summary-card b {
+      color: var(--primary);
+      font-size: 15px;
+    }
+
+    /* กล่องสรุปรายวัน */
+    #dailySection {
+      margin-top: 12px;
+      display: none; /* เริ่มต้นซ่อนไว้ */
+    }
+    .daily-card {
+      background: var(--card-subtle);
+      border-radius: 14px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+      border: 1px solid var(--border);
+    }
+    .daily-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 8px;
+    }
+    .daily-date {
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--text);
+    }
+    .daily-total {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+    .daily-cat-item {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      padding: 5px 0;
+      color: #3a3a3c;
+    }
+    .daily-cat-name::before {
+      content: "• ";
+      color: var(--primary);
+    }
+
     .table-container {
       width: 100%;
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
+      border-radius: 8px;
     }
     table {
       width: 100%;
@@ -160,57 +255,83 @@
       border-bottom: 1px solid var(--border);
     }
     th {
-      background: #f8f9fa;
-      color: var(--subtext);
+      background: var(--card-subtle);
+      color: var(--text-sub);
       font-weight: 600;
     }
-    td { vertical-align: middle; }
     .tag {
       display: inline-block;
-      padding: 3px 6px;
-      border-radius: 4px;
+      padding: 3px 7px;
+      border-radius: 6px;
       font-size: 11px;
-      background: #e5e5ea;
+      font-weight: 500;
+      background: var(--tag-bg);
     }
-    .tag-split { background: #ffeaa7; color: #d63031; }
-    .btn-group-action {
-      display: inline-flex;
-      gap: 6px;
+    .tag-split {
+      background: #ffeaa7;
+      color: #d63031;
     }
-    .action-btn {
-      padding: 6px 12px;
+    .btn-action-del {
+      background: #ffe5e5;
+      color: var(--danger);
       border: none;
-      border-radius: 6px;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-    }
-    .btn-edit-action { background: #e5f2ff; color: var(--primary); }
-    .btn-del-action { background: #ffe5e5; color: var(--danger); }
-    .btn-settle-item {
-      background: #e4f9e9;
-      color: var(--success);
+      border-radius: 8px;
       padding: 6px 10px;
-      border: none;
-      border-radius: 6px;
       font-size: 12px;
       font-weight: 600;
       cursor: pointer;
-      white-space: nowrap;
+    }
+    .btn-action-edit {
+      background: #e5f2ff;
+      color: var(--primary);
+      border: none;
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-right: 4px;
+    }
+    .btn-settle {
+      background: #e4f9e9;
+      color: var(--success);
+      border: none;
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
 
-  <h2>บันทึกทริปญี่ปุ่น 🇯🇵</h2>
+  <div class="app-header">
+    <h1>บันทึกทริปญี่ปุ่น 🇯🇵</h1>
+    <p>Japan Trip Expense Tracker & Split</p>
+  </div>
 
+  <!-- ยอดรวมส่วนตัวทั้งหมด -->
   <div class="card">
-    <label>ยอดรวมเฉพาะส่วนของเรา (ตัดส่วนเพื่อนออกแล้ว)</label>
+    <div class="section-title">ยอดรวมเฉพาะส่วนของเรา (หักส่วนเพื่อนแล้ว)</div>
     <div id="mySummary" class="summary-grid"></div>
   </div>
 
+  <!-- การ์ดสรุปรายวันพร้อมปุ่มกดเปิด/ปิด -->
+  <div class="card">
+    <button type="button" class="btn-toggle-daily" onclick="toggleDailySummary()">
+      <span>📊 สรุปค่าใช้จ่ายแยกรายวัน & หมวดหมู่</span>
+      <span id="dailyArrow">▼</span>
+    </button>
+    
+    <div id="dailySection">
+      <div id="dailySummaryContainer" style="margin-top: 12px;"></div>
+    </div>
+  </div>
+
+  <!-- แบบฟอร์มเพิ่ม/แก้ไขรายการ -->
   <div class="card" id="formCard">
-    <h3 id="formTitle" style="font-size: 16px; margin-bottom: 12px;">เพิ่มรายการใหม่</h3>
+    <h3 id="formTitle" style="font-size: 16px; margin: 0 0 12px 0;">เพิ่มรายการใหม่</h3>
     <div class="row-2">
       <div>
         <label>ยอดจ่ายทั้งหมด</label>
@@ -246,32 +367,34 @@
     </div>
 
     <label>รายละเอียด / โน้ต</label>
-    <textarea id="note" rows="2" placeholder="เช่น ค่าข้าวหน้าเนื้อ, ช้อป Uniqlo"></textarea>
+    <textarea id="note" rows="2" placeholder="เช่น ค่าข้าวหน้าเนื้อ, Uniqlo"></textarea>
 
     <div class="split-toggle-box">
       <input type="checkbox" id="isSplit" onchange="toggleSplitBox()" style="width: 20px; height: 20px; margin: 0;">
-      <label for="isSplit" style="margin: 0; font-size: 14px; color: var(--text);">รายการนี้หารกับเพื่อน</label>
+      <label for="isSplit" style="margin: 0; font-size: 15px; color: var(--text);">รายการนี้หารกับเพื่อน</label>
     </div>
 
     <div id="splitSection" class="split-details">
-      <label>ชื่อเพื่อนที่ร่วมหาร (คั่นด้วยจุลภาค เช่น เอก, นนท์, บอย)</label>
+      <label>ชื่อเพื่อนที่ร่วมหาร (คั่นด้วยจุลภาค เช่น เอก, นนท์)</label>
       <input type="text" id="splitFriends" placeholder="เอก, นนท์">
-      <div id="splitPreview" style="font-size: 13px; color: #795548; margin-top: 4px;"></div>
+      <div id="splitPreview" style="font-size: 13px; color: #856404; font-weight: 500;"></div>
     </div>
 
-    <button id="btnSubmit" class="btn-main" onclick="saveExpense()">บันทึกรายการ</button>
-    <button id="btnCancelEdit" class="btn-cancel" style="display: none;" onclick="cancelEdit()">ยกเลิกการแก้ไข</button>
+    <button id="btnSubmit" class="btn btn-primary" onclick="saveExpense()">บันทึกรายการ</button>
+    <button id="btnCancelEdit" class="btn btn-cancel" style="display: none;" onclick="cancelEdit()">ยกเลิกการแก้ไข</button>
   </div>
 
+  <!-- ยอดค้างเก็บจากเพื่อน -->
   <div class="card">
-    <label>รายการที่ต้องเก็บจากเพื่อน (แยกแต่ละรายการ)</label>
+    <div class="section-title">รายการที่ต้องเก็บจากเพื่อน</div>
     <div class="table-container">
       <div id="friendsSummary"></div>
     </div>
   </div>
 
+  <!-- ตารางประวัติรายการทั้งหมด -->
   <div class="card">
-    <label>ตารางรายการใช้จ่ายทั้งหมด</label>
+    <div class="section-title">ประวัติการใช้จ่ายทั้งหมด</div>
     <div class="table-container">
       <table id="expenseTable">
         <thead>
@@ -281,7 +404,7 @@
             <th>รายการ/โน้ต</th>
             <th>หมวด</th>
             <th>จ่ายด้วย</th>
-            <th>ยอดจ่ายจริง</th>
+            <th>ยอดจริง</th>
             <th>ประเภท</th>
             <th>ยอดเรา</th>
           </tr>
@@ -289,7 +412,7 @@
         <tbody id="tableBody"></tbody>
       </table>
     </div>
-    <button class="btn-export" onclick="exportToExcel()">📥 Export เป็นไฟล์ Excel (.xlsx)</button>
+    <button class="btn btn-export" onclick="exportToExcel()">📥 Export เป็นไฟล์ Excel (.xlsx)</button>
   </div>
 
   <script>
@@ -306,6 +429,24 @@
       renderUI();
       document.getElementById('amount').addEventListener('input', updateSplitPreview);
       document.getElementById('splitFriends').addEventListener('input', updateSplitPreview);
+    }
+
+    function toggleDailySummary() {
+      const section = document.getElementById('dailySection');
+      const arrow = document.getElementById('dailyArrow');
+      const isHidden = section.style.display === 'none' || section.style.display === '';
+      section.style.display = isHidden ? 'block' : 'none';
+      arrow.textContent = isHidden ? '▲' : '▼';
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
     }
 
     function renderCategories() {
@@ -350,7 +491,7 @@
       const cur = document.getElementById('currency').value;
 
       document.getElementById('splitPreview').innerHTML = 
-        `รวมตัวเราเป็น ${totalPeople} คน → ตกคนละ <b>${symbols[cur]}${Number(perPerson).toLocaleString()}</b>`;
+        `รวมเรา = ${totalPeople} คน → ตกคนละ <b>${symbols[cur]}${Number(perPerson).toLocaleString()}</b>`;
     }
 
     function saveExpense() {
@@ -482,6 +623,7 @@
 
     function renderUI() {
       renderMySummary();
+      renderDailySummary();
       renderFriendsSummary();
       renderTable();
     }
@@ -494,9 +636,70 @@
 
       document.getElementById('mySummary').innerHTML = Object.keys(myTotals).map(cur => `
         <div class="summary-card">
-          <b>${cur}</b>: ${symbols[cur]}${myTotals[cur].toLocaleString()}
+          <span>${cur}</span>
+          <b>${symbols[cur]}${Math.round(myTotals[cur]).toLocaleString()}</b>
         </div>
       `).join('');
+    }
+
+    function renderDailySummary() {
+      const container = document.getElementById('dailySummaryContainer');
+      if (expenses.length === 0) {
+        container.innerHTML = '<div style="color: var(--text-sub); text-align: center; font-size: 13px; padding: 12px 0;">ยังไม่มีข้อมูลสรุป</div>';
+        return;
+      }
+
+      const dailyMap = {};
+
+      expenses.forEach(item => {
+        const dateOnly = item.date ? item.date.split(' ')[0] : "ไม่ระบุวัน";
+        if (!dailyMap[dateOnly]) {
+          dailyMap[dateOnly] = { totals: {}, categories: {} };
+        }
+
+        const cur = item.currency;
+        dailyMap[dateOnly].totals[cur] = (dailyMap[dateOnly].totals[cur] || 0) + item.myShare;
+
+        if (!dailyMap[dateOnly].categories[item.category]) {
+          dailyMap[dateOnly].categories[item.category] = {};
+        }
+        dailyMap[dateOnly].categories[item.category][cur] = (dailyMap[dateOnly].categories[item.category][cur] || 0) + item.myShare;
+      });
+
+      let html = '';
+      Object.keys(dailyMap).forEach(date => {
+        const dayData = dailyMap[date];
+        const totalsFormatted = Object.entries(dayData.totals)
+          .filter(([_, val]) => val > 0)
+          .map(([cur, val]) => `${symbols[cur]}${Math.round(val).toLocaleString()}`)
+          .join(' / ');
+
+        html += `
+          <div class="daily-card">
+            <div class="daily-header">
+              <span class="daily-date">📅 ${date}</span>
+              <span class="daily-total">${totalsFormatted}</span>
+            </div>
+        `;
+
+        Object.keys(dayData.categories).forEach(cat => {
+          const catTotals = Object.entries(dayData.categories[cat])
+            .filter(([_, val]) => val > 0)
+            .map(([cur, val]) => `${symbols[cur]}${Math.round(val).toLocaleString()}`)
+            .join(' / ');
+
+          html += `
+            <div class="daily-cat-item">
+              <span class="daily-cat-name">${escapeHtml(cat)}</span>
+              <span style="font-weight: 600;">${catTotals}</span>
+            </div>
+          `;
+        });
+
+        html += `</div>`;
+      });
+
+      container.innerHTML = html;
     }
 
     function renderFriendsSummary() {
@@ -524,7 +727,7 @@
       const container = document.getElementById('friendsSummary');
 
       if (pendingItems.length === 0) {
-        container.innerHTML = '<div style="color: var(--subtext); text-align: center; font-size: 13px; padding: 8px 0;">ไม่มีรายการค้างเรียกเก็บจากเพื่อน 🎉</div>';
+        container.innerHTML = '<div style="color: var(--text-sub); text-align: center; font-size: 13px; padding: 12px 0;">ไม่มีรายการค้างเรียกเก็บจากเพื่อน 🎉</div>';
         return;
       }
 
@@ -533,8 +736,8 @@
           <tr>
             <th>เพื่อน</th>
             <th>รายการ</th>
-            <th>วันเวลา</th>
             <th>ยอดที่ต้องคืน</th>
+            <th>วันเวลา</th>
             <th style="text-align:center;">จัดการ</th>
           </tr>
         </thead>
@@ -542,14 +745,15 @@
 
       pendingItems.forEach(item => {
         const safeNote = item.note.replace(/'/g, "\\'");
+        const safeFriend = item.friend.replace(/'/g, "\\'");
         html += `
           <tr>
-            <td><b>${item.friend}</b></td>
-            <td>${item.note}</td>
-            <td style="font-size: 12px; color: var(--subtext);">${item.date}</td>
-            <td style="color: var(--warning); font-weight: 600;">${symbols[item.currency]}${item.amount.toLocaleString()}</td>
+            <td><b>${escapeHtml(item.friend)}</b></td>
+            <td>${escapeHtml(item.note)}</td>
+            <td style="color: var(--warning); font-weight: 700;">${symbols[item.currency]}${item.amount.toLocaleString()}</td>
+            <td style="font-size: 12px; color: var(--text-sub);">${item.date}</td>
             <td style="text-align:center;">
-              <button class="btn-settle-item" onclick="settleSingleDebt('${item.debtKey}', '${item.friend}', '${safeNote}')">✓ ได้รับแล้ว</button>
+              <button class="btn-settle" onclick="settleSingleDebt('${item.debtKey}', '${safeFriend}', '${safeNote}')">✓ ได้รับแล้ว</button>
             </td>
           </tr>`;
       });
@@ -563,26 +767,24 @@
       tbody.innerHTML = '';
 
       if (expenses.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--subtext); padding: 16px;">ยังไม่มีรายการบันทึก</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--text-sub); padding: 16px;">ยังไม่มีรายการบันทึก</td></tr>';
         return;
       }
 
       expenses.forEach(item => {
         const tr = document.createElement('tr');
         const splitTag = item.isSplit 
-          ? `<span class="tag tag-split">หาร: ${item.friends.join(', ')}</span>`
+          ? `<span class="tag tag-split">หาร: ${escapeHtml(item.friends.join(', '))}</span>`
           : `<span class="tag">ส่วนตัว</span>`;
 
         tr.innerHTML = `
           <td>
-            <div class="btn-group-action">
-              <button class="action-btn btn-edit-action" onclick="startEdit(${item.id})">แก้ไข</button>
-              <button class="action-btn btn-del-action" onclick="deleteExpense(${item.id})">ลบ</button>
-            </div>
+            <button class="btn-action-edit" onclick="startEdit(${item.id})">แก้ไข</button>
+            <button class="btn-action-del" onclick="deleteExpense(${item.id})">ลบ</button>
           </td>
           <td>${item.date}</td>
-          <td><b>${item.note}</b></td>
-          <td><span class="tag">${item.category}</span></td>
+          <td><b>${escapeHtml(item.note)}</b></td>
+          <td><span class="tag">${escapeHtml(item.category)}</span></td>
           <td><span class="tag">${item.paymentMethod}</span></td>
           <td><b>${symbols[item.currency]}${item.totalAmount.toLocaleString()}</b></td>
           <td>${splitTag}</td>
